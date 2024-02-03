@@ -31,67 +31,55 @@ def show_menu(user_id):
     bot.send_message(user_id, "Choose an action:", reply_markup=markup)
 
 
-def create_room(user_id):
-    # Generate a random room code
-    room_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=4))
+def create_room(user_id, input_type=None, room_code=None, room_data=None, message=None):
+    if input_type is None:
+        # Generate a random room code
+        room_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=4))
 
-    # Initialize room data
-    room_data = {
-        'admin': {
-            'user_id': user_id,
-            'username': bot.get_chat(user_id).username,
-            'first_name': bot.get_chat(user_id).first_name,
-            'last_name': bot.get_chat(user_id).last_name,
-        },
-        'players': [],
-        'num_players': None,
-        'num_words': None,
-        'words': [],
-    }
+        # Initialize room data
+        room_data = {
+            'admin': {
+                'user_id': user_id,
+                'username': bot.get_chat(user_id).username,
+                'first_name': bot.get_chat(user_id).first_name,
+                'last_name': bot.get_chat(user_id).last_name,
+            },
+            'players': [],
+            'num_players': None,
+            'num_words': None,
+            'words': [],
+        }
 
-    # Ask the admin for the number of players
-    bot.send_message(user_id, "How many players will there be?")
-    bot.register_next_step_handler_by_chat_id(user_id, lambda m: process_num_players(m, room_code, room_data))
+        # Ask the admin for the number of players
+        bot.send_message(user_id, "How many players will there be?")
+        bot.register_next_step_handler_by_chat_id(user_id,
+                                                  lambda message: create_room(user_id, 'num_players', room_code,
+                                                                              room_data, message))
+    else:
+        try:
+            # Parse the user's input as an integer
+            input_value = int(message.text)
 
+            # Update the room data
+            room_data[input_type] = input_value
 
-def process_num_players(message, room_code, room_data):
-    user_id = message.chat.id
+            # Ask for the number of additional words if 'num_players' is processed
+            if input_type == 'num_players':
+                bot.send_message(user_id, "How many additional words will you provide?")
+                bot.register_next_step_handler_by_chat_id(user_id,
+                                                          lambda message: create_room(user_id, 'num_words', room_code,
+                                                                                      room_data, message))
+            else:
+                # Create a JSON file for the room
+                room_filename = f'rooms/{room_code}.json'
+                with open(room_filename, 'w') as room_file:
+                    json.dump(room_data, room_file)
 
-    try:
-        # Parse the user's input as an integer
-        num_players = int(message.text)
-
-        # Update the room data
-        room_data['num_players'] = num_players
-
-        # Ask the admin for the number of additional words
-        bot.send_message(user_id, "How many additional words will you provide?")
-        bot.register_next_step_handler_by_chat_id(user_id, lambda m: process_num_words(m, room_code, room_data))
-    except ValueError:
-        bot.send_message(user_id, "Please enter a valid number.")
-        create_room(user_id)
-
-
-def process_num_words(message, room_code, room_data):
-    user_id = message.chat.id
-
-    try:
-        # Parse the user's input as an integer
-        num_words = int(message.text)
-
-        # Update the room data
-        room_data['num_words'] = num_words
-
-        # Create a JSON file for the room
-        room_filename = f'rooms/{room_code}.json'
-        with open(room_filename, 'w') as room_file:
-            json.dump(room_data, room_file)
-
-        # Send a message to the admin indicating the room is created
-        bot.send_message(user_id, f"Your room has been created! Room code: {room_code}")
-    except ValueError:
-        bot.send_message(user_id, "Please enter a valid number.")
-        create_room(user_id)
+                # Send a message to the admin indicating the room is created
+                bot.send_message(user_id, f"Your room has been created! Room code: {room_code}")
+        except ValueError:
+            bot.send_message(user_id, "Please enter a valid number.")
+            create_room(user_id, input_type, room_code, room_data)
 
 
 def join_room(user_id):
