@@ -52,9 +52,7 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
 
         # Ask the admin for the number of players
         bot.send_message(user_id, "How many players will there be?")
-        bot.register_next_step_handler_by_chat_id(user_id,
-                                                  lambda message: create_room(user_id, 'num_players', room_code,
-                                                                              room_data, message))
+        bot.register_next_step_handler_by_chat_id(user_id, lambda m: create_room(user_id, 'num_players', room_code, room_data, m))
     else:
         try:
             # Parse the user's input as an integer
@@ -66,9 +64,7 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
             # Ask for the number of additional words if 'num_players' is processed
             if input_type == 'num_players':
                 bot.send_message(user_id, "How many additional words will you provide?")
-                bot.register_next_step_handler_by_chat_id(user_id,
-                                                          lambda message: create_room(user_id, 'num_words', room_code,
-                                                                                      room_data, message))
+                bot.register_next_step_handler_by_chat_id(user_id, lambda m: create_room(user_id, 'num_words', room_code, room_data, m))
             else:
                 # Create a JSON file for the room
                 room_filename = f'rooms/{room_code}.json'
@@ -77,9 +73,16 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
 
                 # Send a message to the admin indicating the room is created
                 bot.send_message(user_id, f"Your room has been created! Room code: {room_code}")
+
+                # Introduce a delay of 3 seconds before calling ask_a_word for the admin
+                time.sleep(3)
+                # Call ask_a_word for the admin after the room is created
+                ask_a_word(user_id, room_code, is_admin=True)
         except ValueError:
             bot.send_message(user_id, "Please enter a valid number.")
             create_room(user_id, input_type, room_code, room_data)
+
+
 
 
 def join_room(user_id):
@@ -112,6 +115,12 @@ def process_join_code(message):
 
         # Send a message to the user indicating a successful join
         bot.send_message(user_id, f"You have joined the room {room_code} successfully!")
+
+        # Introduce a delay (adjust as needed) before calling ask_a_word for the player
+        time.sleep(3)
+
+        # Call ask_a_word for the player after joining the room
+        ask_a_word(user_id, room_code, is_admin=False)
     else:
         # Send an error message to the user
         bot.send_message(user_id, "Room not found. Please check the code and try again.")
@@ -129,6 +138,41 @@ def handle_create_room(message):
 def handle_join_room(message):
     user_id = message.chat.id
     join_room(user_id)
+
+
+def ask_a_word(user_id, room_code, is_admin=False):
+    if is_admin:
+        bot.send_message(user_id, "As the admin, please type a word:")
+    else:
+        bot.send_message(user_id, "Please type a word:")
+
+    bot.register_next_step_handler_by_chat_id(user_id, lambda message: process_word(message, room_code, is_admin))
+
+def process_word(message, room_code, is_admin):
+    user_id = message.chat.id
+    word = message.text
+
+    room_filename = f'rooms/{room_code}.json'
+
+    if os.path.exists(room_filename):
+        with open(room_filename, 'r') as room_file:
+            room_data = json.load(room_file)
+
+        if is_admin:
+            # Store the admin word in 'words' list
+            room_data['words'].append({'user_id': user_id, 'word': word})
+        else:
+            # Store player words in 'words' list
+            room_data['words'].append({'user_id': user_id, 'word': word})
+
+        with open(room_filename, 'w') as room_file:
+            json.dump(room_data, room_file)
+
+        confirmation_message = f"The word {'admin_word' if is_admin else 'you'} added: {word}"
+        bot.send_message(user_id, confirmation_message)
+    else:
+        bot.send_message(user_id, "Room not found. Please check the code and try again.")
+
 
 
 # Ensure the while loop is within the try-except block
