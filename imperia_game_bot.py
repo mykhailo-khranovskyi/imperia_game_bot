@@ -196,11 +196,17 @@ def get_words(message):
             words_list = [word['word'] for word in room_data['words']]
             words_message = "\n".join(words_list)
 
+            # Send words to the admin
             bot.send_message(user_id, f"Words in the room {room_code}:\n{words_message}")
+
+            # Send words to all players
+            for player in room_data['players']:
+                bot.send_message(player['user_id'], f"Words in the room {room_code}:\n{words_message}")
         else:
             bot.send_message(user_id, "Room not found. Please check the code and try again.")
     else:
         bot.send_message(user_id, "You are not in any room. Please create or join a room first.")
+
 
 
 # Function to get the room code associated with a user
