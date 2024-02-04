@@ -188,7 +188,7 @@ def process_word(message, room_code, is_admin):
         bot.send_message(user_id, "Room not found. Please check the code and try again.")
 
 
-@bot.message_handler(commands=['get_words'])
+@bot.message_handler(commands=['go'])
 def get_words(message):
     user_id = message.chat.id
     room_code = get_user_room_code(user_id)
@@ -216,15 +216,17 @@ def get_words(message):
         bot.send_message(user_id, "You are not in any room. Please create or join a room first.")
 
 
-# Function to get the room code associated with a user
+# Function to get the latest room code associated with a user
 def get_user_room_code(user_id):
-    print(f"DEBUG - Rooms: {rooms}")
-    for room_code, room_data in rooms.items():
-        print(
-            f"DEBUG - Checking Room: {room_code}, Admin: {room_data['admin']['user_id']}, Players: {room_data['players']}")
-        if user_id == room_data['admin']['user_id'] or any(
-                player['user_id'] == user_id for player in room_data['players']):
-            return room_code
+    user_rooms = [(room_code, room_data) for room_code, room_data in rooms.items() if
+        user_id == room_data['admin']['user_id'] or any(
+            player['user_id'] == user_id for player in room_data['players'])]
+
+    if user_rooms:
+        # Return the latest room code (based on creation time)
+        latest_room = max(user_rooms, key=lambda x: os.path.getctime(f'rooms/{x[0]}.json'))
+        return latest_room[0]
+
     return None
 
 
