@@ -171,13 +171,14 @@ def process_word(message, room_code, is_admin):
             # Store player words in 'words' list
             room_data['words'].append({'user_id': user_id, 'word': word})
 
-        with open(room_filename, 'w') as room_file:
-            json.dump(room_data, room_file)
+        with open(room_filename, 'w', encoding='utf-8') as room_file:
+            json.dump(room_data, room_file, ensure_ascii=False)  # Set ensure_ascii to False
 
         confirmation_message = f"The word {'admin_word' if is_admin else 'you'} added: {word}"
         bot.send_message(user_id, confirmation_message)
     else:
         bot.send_message(user_id, "Room not found. Please check the code and try again.")
+
 
 
 @bot.message_handler(commands=['get_words'])
@@ -206,7 +207,6 @@ def get_words(message):
             bot.send_message(user_id, "Room not found. Please check the code and try again.")
     else:
         bot.send_message(user_id, "You are not in any room. Please create or join a room first.")
-
 
 
 # Function to get the room code associated with a user
