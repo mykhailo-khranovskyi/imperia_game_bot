@@ -76,7 +76,7 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
 
             # Ask for the number of additional words if 'num_players' is processed
             if input_type == 'num_players':
-                bot.send_message(user_id, "Скільки додаткових слів додасть адмін?")
+                bot.send_message(user_id, "Скільки додаткових слів додасть адмін? (поки що не імплементовано, введіть будь яке число)")
                 bot.register_next_step_handler_by_chat_id(user_id,
                                                           lambda m: create_room(user_id, 'num_words', room_code,
                                                                                 room_data, m))
