@@ -200,6 +200,9 @@ def get_words(message):
             with open(room_filename, 'r') as room_file:
                 room_data = json.load(room_file)
 
+            # Shuffle the words in random order
+            random.shuffle(room_data['words'])
+
             words_list = [word['word'] for word in room_data['words']]
             words_message = "\n".join(words_list)
 
@@ -210,17 +213,18 @@ def get_words(message):
                 markup.add(clear_words_button)
 
                 clear_words_message = (
-                    f"Слова в кімнаті {room_code}:\n{words_message}\n\n"
+                    f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}\n\n"
                     "Натисни /clear_words щоб очистити введені слова і зіграти знову."
                 )
 
                 bot.send_message(user_id, clear_words_message, reply_markup=markup)
             else:
-                bot.send_message(user_id, f"Слова в кімнаті {room_code}:\n{words_message}")
+                bot.send_message(user_id, f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}")
 
             # Send words to all players
             for player in room_data['players']:
-                bot.send_message(player['user_id'], f"Слова в кімнаті {room_code}:\n{words_message}")
+                bot.send_message(player['user_id'],
+                                 f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}")
         else:
             bot.send_message(user_id, "Кімнату не знайдено. Будь ласка уточніть код в адміна.")
     else:
