@@ -61,11 +61,18 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
         # Update the rooms dictionary
         rooms[room_code] = room_data
 
-        # Ask the admin for the number of players
-        bot.send_message(user_id, "Скільки буде гравців?")
-        bot.register_next_step_handler_by_chat_id(user_id,
-                                                  lambda m: create_room(user_id, 'num_players', room_code, room_data,
-                                                                        m))
+        # Create a JSON file for the room
+        room_filename = f'rooms/{room_code}.json'
+        with open(room_filename, 'w') as room_file:
+            json.dump(room_data, room_file)
+
+        # Send a message to the admin indicating the room is created
+        bot.send_message(user_id, f"Кімнату створено! Код входу: {room_code}")
+
+        # Introduce a delay of 3 seconds before calling ask_a_word for the admin
+        time.sleep(3)
+        # Call ask_a_word for the admin after the room is created
+        ask_a_word(user_id, room_code, is_admin=True)
     else:
         try:
             # Parse the user's input as an integer
@@ -74,25 +81,18 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
             # Update the room data
             room_data[input_type] = input_value
 
-            # Ask for the number of additional words if 'num_players' is processed
-            if input_type == 'num_players':
-                bot.send_message(user_id, "Скільки додаткових слів додасть адмін? (поки що не імплементовано, введіть будь яке число)")
-                bot.register_next_step_handler_by_chat_id(user_id,
-                                                          lambda m: create_room(user_id, 'num_words', room_code,
-                                                                                room_data, m))
-            else:
-                # Create a JSON file for the room
-                room_filename = f'rooms/{room_code}.json'
-                with open(room_filename, 'w') as room_file:
-                    json.dump(room_data, room_file)
+            # Create a JSON file for the room
+            room_filename = f'rooms/{room_code}.json'
+            with open(room_filename, 'w') as room_file:
+                json.dump(room_data, room_file)
 
-                # Send a message to the admin indicating the room is created
-                bot.send_message(user_id, f"Кімнату створено! Код входу: {room_code}")
+            # Send a message to the admin indicating the room is created
+            bot.send_message(user_id, f"Кімнату створено! Код входу: {room_code}")
 
-                # Introduce a delay of 3 seconds before calling ask_a_word for the admin
-                time.sleep(3)
-                # Call ask_a_word for the admin after the room is created
-                ask_a_word(user_id, room_code, is_admin=True)
+            # Introduce a delay of 3 seconds before calling ask_a_word for the admin
+            time.sleep(3)
+            # Call ask_a_word for the admin after the room is created
+            ask_a_word(user_id, room_code, is_admin=True)
         except ValueError:
             bot.send_message(user_id, "Будь ласка, введіть валідний номер.")
             create_room(user_id, input_type, room_code, room_data)
