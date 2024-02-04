@@ -31,8 +31,6 @@ def show_menu(user_id):
     bot.send_message(user_id, "Choose an action:", reply_markup=markup)
 
 
-# ... (previous code)
-
 def create_room(user_id, input_type=None, room_code=None, room_data=None, message=None):
     if input_type is None:
         # Generate a random room code
@@ -90,9 +88,6 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
         except ValueError:
             bot.send_message(user_id, "Please enter a valid number.")
             create_room(user_id, input_type, room_code, room_data)
-
-
-# ... (remaining code)
 
 
 def join_room(user_id):
@@ -185,7 +180,6 @@ def process_word(message, room_code, is_admin):
         bot.send_message(user_id, "Room not found. Please check the code and try again.")
 
 
-# Add a function to handle the '/get_words' command
 @bot.message_handler(commands=['get_words'])
 def get_words(message):
     user_id = message.chat.id
@@ -215,15 +209,6 @@ def get_user_room_code(user_id):
     for room_code, room_data in rooms.items():
         print(
             f"DEBUG - Checking Room: {room_code}, Admin: {room_data['admin']['user_id']}, Players: {room_data['players']}")
-        if user_id == room_data['admin']['user_id'] or any(
-                player['user_id'] == user_id for player in room_data['players']):
-            return room_code
-    return None
-
-
-# Function to get the room code associated with a user
-def get_user_room_code(user_id):
-    for room_code, room_data in rooms.items():
         if user_id == room_data['admin']['user_id'] or any(
                 player['user_id'] == user_id for player in room_data['players']):
             return room_code
