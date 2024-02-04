@@ -91,8 +91,8 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
             bot.send_message(user_id, "Please enter a valid number.")
             create_room(user_id, input_type, room_code, room_data)
 
-
 # ... (remaining code)
+
 
 
 def join_room(user_id):
@@ -221,6 +221,7 @@ def get_user_room_code(user_id):
     return None
 
 
+
 # Function to get the room code associated with a user
 def get_user_room_code(user_id):
     for room_code, room_data in rooms.items():
@@ -228,7 +229,6 @@ def get_user_room_code(user_id):
                 player['user_id'] == user_id for player in room_data['players']):
             return room_code
     return None
-
 
 # Ensure the while loop is within the try-except block
 while True:
