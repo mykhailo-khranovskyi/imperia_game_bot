@@ -31,24 +31,32 @@ def show_menu(user_id):
     bot.send_message(user_id, "Choose an action:", reply_markup=markup)
 
 
+def generate_room_code():
+    return ''.join(random.choices('1234567890', k=4))
+
+
+def initialize_room_data(user_id):
+    return {
+        'admin': {
+            'user_id': user_id,
+            'username': bot.get_chat(user_id).username,
+            'first_name': bot.get_chat(user_id).first_name,
+            'last_name': bot.get_chat(user_id).last_name,
+        },
+        'players': [],
+        'num_players': None,
+        'num_words': None,
+        'words': [],
+    }
+
+
 def create_room(user_id, input_type=None, room_code=None, room_data=None, message=None):
     if input_type is None:
         # Generate a random room code
-        room_code = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=4))
+        room_code = generate_room_code()
 
         # Initialize room data
-        room_data = {
-            'admin': {
-                'user_id': user_id,
-                'username': bot.get_chat(user_id).username,
-                'first_name': bot.get_chat(user_id).first_name,
-                'last_name': bot.get_chat(user_id).last_name,
-            },
-            'players': [],
-            'num_players': None,
-            'num_words': None,
-            'words': [],
-        }
+        room_data = initialize_room_data(user_id)
 
         # Update the rooms dictionary
         rooms[room_code] = room_data
@@ -178,7 +186,6 @@ def process_word(message, room_code, is_admin):
         bot.send_message(user_id, confirmation_message)
     else:
         bot.send_message(user_id, "Room not found. Please check the code and try again.")
-
 
 
 @bot.message_handler(commands=['get_words'])
