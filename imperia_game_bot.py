@@ -176,10 +176,11 @@ def handle_join_room(message):
 
 
 def ask_a_word(user_id, room_code, is_admin=False):
-    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_text = "Як адмін, будь ласка, додайте слово:" if is_admin else "Будь ласка, введіть слово:"
+    if is_admin:
+        bot.send_message(user_id, "Як адмін, додайте слово або натисніть /done, щоб завершити додавання слів:")
+    else:
+        bot.send_message(user_id, "Будь ласка, введіть слово:")
 
-    bot.send_message(user_id, button_text, reply_markup=markup)
     bot.register_next_step_handler_by_chat_id(user_id, lambda message: process_word(message, room_code, is_admin))
 
 
@@ -187,34 +188,48 @@ def process_word(message, room_code, is_admin):
     user_id = message.chat.id
     word = message.text
 
+    if is_admin:
+        if word.lower() == '/done':
+            bot.send_message(user_id, "Додавання слів завершено.")
+            ask_to_start_game(user_id, room_code)
+        else:
+            add_word_to_room(user_id, room_code, word)
+            ask_a_word(user_id, room_code, is_admin)
+    else:
+        add_word_to_room(user_id, room_code, word)
+        bot.send_message(user_id, "Слово додано.")
+
+
+def add_word_to_room(user_id, room_code, word):
     room_filename = f'rooms/{room_code}.json'
 
     if os.path.exists(room_filename):
         with open(room_filename, 'r') as room_file:
             room_data = json.load(room_file)
 
-        if is_admin:
-            # Store the admin word in 'words' list
-            room_data['words'].append({'user_id': user_id, 'word': word})
-        else:
-            # Store player words in 'words' list
-            room_data['words'].append({'user_id': user_id, 'word': word})
+        # Store the word in 'words' list
+        room_data['words'].append({'user_id': user_id, 'word': word})
 
+        # Save the updated room data
         with open(room_filename, 'w', encoding='utf-8') as room_file:
-            json.dump(room_data, room_file, ensure_ascii=False)  # Set ensure_ascii to False
+            json.dump(room_data, room_file, ensure_ascii=False)
 
-        confirmation_message = f"Слово додали: {word}"
-        bot.send_message(user_id, confirmation_message)
     else:
         bot.send_message(user_id, "Кімнату не знайдено. Будь ласка, уточніть код в адміна.")
+
+
+def ask_to_start_game(user_id, room_code):
+    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    start_game_button = types.KeyboardButton('/go')
+    markup.add(start_game_button)
+
+    bot.send_message(user_id, "Натисніть /go, щоб розпочати гру.", reply_markup=markup)
 
 
 @bot.message_handler(commands=['go'])
 def get_words(message):
     user_id = message.chat.id
     room_code = get_user_room_code(user_id)
-
-    print(f"DEBUG - User ID: {user_id}, Room Code: {room_code}")
 
     if room_code:
         room_filename = f'rooms/{room_code}.json'
@@ -248,7 +263,7 @@ def get_words(message):
                 bot.send_message(player['user_id'],
                                  f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}")
         else:
-            bot.send_message(user_id, "Кімнату не знайдено. Будь ласка уточніть код в адміна.")
+            bot.send_message(user_id, "Кімнату не знайдено. Будь ласка, уточніть код в адміна.")
     else:
         bot.send_message(user_id, "Ви не в кімнаті. Будь ласка створіть чи зайдіть в кімнату.")
 
