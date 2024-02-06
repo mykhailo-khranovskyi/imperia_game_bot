@@ -5,6 +5,7 @@ import random
 import telebot
 from config import TOKEN
 from telebot import types
+from datetime import datetime
 
 # Initialize the bot with your Telegram Bot token
 bot = telebot.TeleBot(TOKEN)
@@ -16,9 +17,30 @@ os.makedirs('rooms', exist_ok=True)
 rooms = {}
 
 
+def log_user_info(user_id, username, first_name, last_name):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open('user_log.txt', 'r') as log_file:
+        existing_users = log_file.readlines()
+        for user_info in existing_users:
+            if str(user_id) in user_info:
+                return  # User already logged, so exit the function
+
+    # If user information doesn't exist in the log file, append it with date and time
+    with open('user_log.txt', 'a') as log_file:
+        log_file.write(
+            f"{current_time}: User ID: {user_id}, Username: {username}, First Name: {first_name}, Last Name: {last_name}\n")
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.chat.id
+    username = message.chat.username
+    first_name = message.chat.first_name
+    last_name = message.chat.last_name
+
+    # Log user information
+    log_user_info(user_id, username, first_name, last_name)
+
     bot.send_message(user_id, "Привіт, це гра Імперія. Тут потрібно вгадати хто яке слово загадав:")
     show_menu(user_id)
 
