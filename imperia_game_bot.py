@@ -177,7 +177,12 @@ def handle_join_room(message):
 
 def ask_a_word(user_id, room_code, is_admin=False):
     if is_admin:
-        bot.send_message(user_id, "Як адмін, додайте слово або натисніть /done, щоб завершити додавання слів:")
+        markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        done_button = types.KeyboardButton('/done')
+        markup.add(done_button)
+
+        bot.send_message(user_id, "Як адмін, додайте слово або натисніть кнопку нижче, щоб завершити додавання слів:",
+                         reply_markup=markup)
     else:
         bot.send_message(user_id, "Будь ласка, введіть слово:")
 
