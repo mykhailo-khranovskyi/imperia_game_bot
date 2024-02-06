@@ -256,7 +256,8 @@ def get_words(message):
 
                 clear_words_message = (
                     f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}\n\n"
-                    "Натисни /clear_words щоб очистити введені слова і зіграти знову."
+                    "Натисни /clear_words щоб очистити введені слова і зіграти знову або "
+                    "/delete_room щоб видалити кімнату і закінчити гру."
                 )
 
                 bot.send_message(user_id, clear_words_message, reply_markup=markup)
@@ -280,9 +281,10 @@ def get_user_room_code(user_id):
             player['user_id'] == user_id for player in room_data['players'])]
 
     if user_rooms:
-        # Return the latest room code (based on creation time)
-        latest_room = max(user_rooms, key=lambda x: os.path.getctime(f'rooms/{x[0]}.json'))
-        return latest_room[0]
+        # Return the latest room code (based on creation time) if the room file exists
+        for room_code, _ in sorted(user_rooms, key=lambda x: os.path.getctime(f'rooms/{x[0]}.json'), reverse=True):
+            if os.path.exists(f'rooms/{room_code}.json'):
+                return room_code
 
     return None
 
@@ -350,6 +352,27 @@ def contact_developer(message):
         "Телеграм: @mik788"
     )
     bot.send_message(user_id, contact_message)
+
+
+@bot.message_handler(commands=['delete_room'])
+def delete_room(message):
+    user_id = message.chat.id
+    room_code = get_user_room_code(user_id)
+
+    if room_code:
+        room_filename = f'rooms/{room_code}.json'
+        if os.path.exists(room_filename):
+            os.remove(room_filename)  # Delete the room file
+            bot.send_message(user_id, f"Кімнату з кодом {room_code} було видалено.")
+        else:
+            bot.send_message(user_id, "Кімнату не знайдено.")
+    else:
+        bot.send_message(user_id, "Ви не в кімнаті. Будь ласка, створіть або зайдіть в кімнату.")
+
+    # Remove the keyboard markup after deleting the room
+    bot.send_message(user_id, "Видалено кімнату. Натисни /contact_developer для зв'язку з розробником."
+                              "Або /start щоб розпочати гру знову.",
+                     reply_markup=types.ReplyKeyboardRemove())
 
 
 # Ensure the while loop is within the try-except block
