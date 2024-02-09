@@ -385,7 +385,8 @@ def delete_room(message):
 # Ensure the while loop is within the try-except block
 while True:
     try:
-        bot.polling()
-    except ConnectionError as e:
-        print(f"Connection error: {e}. Retrying in 10 seconds...")
-        time.sleep(10)
+        bot.polling(timeout=60)  # Set the timeout to 60 seconds
+    except Exception as e:
+        print(f"An error occurred: {e}. Retrying...")
+        time.sleep(10)  # Wait for 10 seconds before retrying
+
