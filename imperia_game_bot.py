@@ -16,6 +16,7 @@ os.makedirs('rooms', exist_ok=True)
 # Dictionary to store information about game rooms
 rooms = {}
 
+
 def log_user_info(user_id, username, first_name, last_name):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     file_path = 'user_log.txt'
@@ -389,4 +390,3 @@ while True:
     except Exception as e:
         print(f"An error occurred: {e}. Retrying...")
         time.sleep(10)  # Wait for 10 seconds before retrying
-
