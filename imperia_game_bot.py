@@ -383,10 +383,5 @@ def delete_room(message):
                      reply_markup=types.ReplyKeyboardRemove())
 
 
-# Ensure the while loop is within the try-except block
-while True:
-    try:
-        bot.polling(timeout=60)  # Set the timeout to 60 seconds
-    except Exception as e:
-        print(f"An error occurred: {e}. Retrying...")
-        time.sleep(10)  # Wait for 10 seconds before retrying
+# Start the bot
+bot.polling()
