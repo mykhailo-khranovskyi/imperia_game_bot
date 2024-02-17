@@ -36,7 +36,8 @@ def log_user_info(user_id, username, first_name, last_name):
     # If user information doesn't exist in the log file, append it with date and time
     with open(file_path, 'a') as log_file:
         log_file.write(
-            f"{current_time}: User ID: {user_id}, Username: {username}, First Name: {first_name}, Last Name: {last_name}\n")
+            f"{current_time}: User ID: {user_id}, Username: "
+            f"{username}, First Name: {first_name}, Last Name: {last_name}\n")
 
 
 @bot.message_handler(commands=['start'])
@@ -56,7 +57,7 @@ def start(message):
 def show_menu(user_id):
     markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     create_room_button = types.KeyboardButton('Створити кімнату')
-    join_room_button = types.KeyboardButton('Зайти в кімнату')
+    join_room_button = types.KeyboardButton("Зайти в кімнату")
     markup.add(create_room_button, join_room_button)
     bot.send_message(user_id, "Вибери:", reply_markup=markup)
 
@@ -343,10 +344,12 @@ def rules(message):
         "5. Гравці по черзі вгадують хто яке слово загадав. Треба назвати слово і ім'я\n"
         "6. Той кого назвали повинен підтвердити чи спростувати гіпотезу\n"
         "7. Не можна двічі опитувати того самого гравця\n"
-        "8. Якщо гравець A вгадав слово гравця B, то гравець B приєднується в його імперію (вони разом повинні вгадати наступне слово)\n"
+        "8. Якщо гравець A вгадав слово гравця B, то гравець "
+        "B приєднується в його імперію (вони разом повинні вгадати наступне слово)\n"
         "9. Якщо інший гравець (С) вгадав слово гравця А, то обидва гравці А і В приєднуються в імперію гравця С\n"
         "10. Мета гри залучити всіх гравців в одну імперію (вгадавши всі слова)\n"
-        "11. Після вгадування всіх слів, адмін натискає /clear_words, щоб очистити слова в Кімнаті та зіграти знову. Або можна створити нову кімнату\n"
+        "11. Після вгадування всіх слів, адмін натискає /clear_words, "
+        "щоб очистити слова в Кімнаті та зіграти знову. Або можна створити нову кімнату\n"
     )
     bot.send_message(user_id, rules_message)
 
