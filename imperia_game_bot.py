@@ -291,7 +291,8 @@ def get_user_room_code(user_id):
 
     if user_rooms:
         # Return the latest room code (based on creation time) if the room file exists
-        for room_code, _ in sorted(user_rooms, key=lambda x: os.path.getctime(f'rooms/{x[0]}.json'), reverse=True):
+        for room_code, _ in sorted(user_rooms, key=lambda x: os.path.getctime(f'rooms/{x[0]}.json') if os.path.exists(
+                f'rooms/{x[0]}.json') else 0, reverse=True):
             if os.path.exists(f'rooms/{room_code}.json'):
                 return room_code
 
