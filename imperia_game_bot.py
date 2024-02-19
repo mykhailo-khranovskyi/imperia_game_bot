@@ -388,4 +388,4 @@ def delete_room(message):
 
 
 # Start the bot
-bot.polling()
+bot.infinity_polling(timeout=10, long_polling_timeout = 5)
