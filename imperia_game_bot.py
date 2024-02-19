@@ -6,7 +6,9 @@ import telebot
 from config import TOKEN
 from telebot import types
 from datetime import datetime
+from languages import languages
 
+LANGUAGE = 'en'  # Default language
 # Initialize the bot with your Telegram Bot token
 bot = telebot.TeleBot(TOKEN)
 
@@ -15,6 +17,15 @@ os.makedirs('rooms', exist_ok=True)
 
 # Dictionary to store information about game rooms
 rooms = {}
+
+
+# Define a function to get language-specific strings
+def get_language_strings(language):
+    if language in languages:
+        return languages[language]
+    else:
+        # Default to English if language is not supported
+        return languages['en']
 
 
 def log_user_info(user_id, username, first_name, last_name):
@@ -40,6 +51,8 @@ def log_user_info(user_id, username, first_name, last_name):
             f"{username}, First Name: {first_name}, Last Name: {last_name}\n")
 
 
+# Now, wherever you need language-specific strings, you can call this function
+# For example, in your start function:
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.chat.id
@@ -50,16 +63,17 @@ def start(message):
     # Log user information
     log_user_info(user_id, username, first_name, last_name)
 
-    bot.send_message(user_id, "Привіт, це гра Імперія. Тут потрібно вгадати хто яке слово загадав:")
-    show_menu(user_id)
+    language_strings = get_language_strings(LANGUAGE)
+    bot.send_message(user_id, language_strings['welcome_message'])
+    show_menu(user_id, language_strings)
 
 
-def show_menu(user_id):
+def show_menu(user_id, language_strings):
     markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    create_room_button = types.KeyboardButton('Створити кімнату')
-    join_room_button = types.KeyboardButton("Зайти в кімнату")
+    create_room_button = types.KeyboardButton(language_strings['create_room'])
+    join_room_button = types.KeyboardButton(language_strings['join_room'])
     markup.add(create_room_button, join_room_button)
-    bot.send_message(user_id, "Вибери:", reply_markup=markup)
+    bot.send_message(user_id, language_strings['select'], reply_markup=markup)
 
 
 def generate_room_code():
@@ -82,6 +96,8 @@ def initialize_room_data(user_id):
 
 
 def create_room(user_id, input_type=None, room_code=None, room_data=None, message=None):
+    language_strings = get_language_strings(LANGUAGE)
+
     if input_type is None:
         # Generate a random room code
         room_code = generate_room_code()
@@ -98,7 +114,7 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
             json.dump(room_data, room_file)
 
         # Send a message to the admin indicating the room is created
-        bot.send_message(user_id, f"Кімнату створено! Код входу: {room_code}")
+        bot.send_message(user_id, language_strings['room_created'].format(room_code=room_code))
 
         # Introduce a delay of 3 seconds before calling ask_a_word for the admin
         time.sleep(3)
@@ -118,20 +134,20 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
                 json.dump(room_data, room_file)
 
             # Send a message to the admin indicating the room is created
-            bot.send_message(user_id, f"Кімнату створено! Код входу: {room_code}")
+            bot.send_message(user_id, language_strings['room_created'].format(room_code=room_code))
 
             # Introduce a delay of 3 seconds before calling ask_a_word for the admin
             time.sleep(3)
             # Call ask_a_word for the admin after the room is created
             ask_a_word(user_id, room_code, is_admin=True)
         except ValueError:
-            bot.send_message(user_id, "Будь ласка, введіть валідний номер.")
+            bot.send_message(user_id, language_strings['valid_number_prompt'])
             create_room(user_id, input_type, room_code, room_data)
 
 
 def join_room(user_id):
     # Prompt the user to enter a room code
-    bot.send_message(user_id, "Ведіть Код входу:")
+    bot.send_message(user_id, languages[LANGUAGE]['enter_room_code'])
     bot.register_next_step_handler_by_chat_id(user_id, process_join_code)
 
 
@@ -158,7 +174,7 @@ def process_join_code(message):
             json.dump(room_data, room_file)
 
         # Send a message to the user indicating a successful join
-        bot.send_message(user_id, f"Ви зайшли в кімнату {room_code} успішно!")
+        bot.send_message(user_id, languages[LANGUAGE]['join_room_success'].format(room_code=room_code))
 
         # Introduce a delay (adjust as needed) before calling ask_a_word for the player
         time.sleep(3)
@@ -167,18 +183,18 @@ def process_join_code(message):
         ask_a_word(user_id, room_code, is_admin=False)
     else:
         # Send an error message to the user
-        bot.send_message(user_id, "Кімнату не знайдено. Уточніть код в адміна.")
+        bot.send_message(user_id, languages[LANGUAGE]['room_not_found'])
 
 
 # Handle the 'Create room' button
-@bot.message_handler(func=lambda message: message.text == 'Створити кімнату')
+@bot.message_handler(func=lambda message: message.text in ['Створити кімнату', 'Create room'])
 def handle_create_room(message):
     user_id = message.chat.id
     create_room(user_id)
 
 
 # Handle the 'Join room' button
-@bot.message_handler(func=lambda message: message.text == 'Зайти в кімнату')
+@bot.message_handler(func=lambda message: message.text in ['Зайти в кімнату', 'Join room'])
 def handle_join_room(message):
     user_id = message.chat.id
     join_room(user_id)
@@ -190,10 +206,10 @@ def ask_a_word(user_id, room_code, is_admin=False):
         done_button = types.KeyboardButton('/done')
         markup.add(done_button)
 
-        bot.send_message(user_id, "Як адмін, додайте слово або натисніть кнопку нижче, щоб завершити додавання слів:",
+        bot.send_message(user_id, languages[LANGUAGE]['add_word_as_admin'],
                          reply_markup=markup)
     else:
-        bot.send_message(user_id, "Будь ласка, введіть слово:")
+        bot.send_message(user_id, languages[LANGUAGE]['enter_word'])
 
     bot.register_next_step_handler_by_chat_id(user_id, lambda message: process_word(message, room_code, is_admin))
 
@@ -204,14 +220,14 @@ def process_word(message, room_code, is_admin):
 
     if is_admin:
         if word.lower() == '/done':
-            bot.send_message(user_id, "Додавання слів завершено.")
+            bot.send_message(user_id, languages[LANGUAGE]['add_words_done'])
             ask_to_start_game(user_id, room_code)
         else:
             add_word_to_room(user_id, room_code, word)
             ask_a_word(user_id, room_code, is_admin)
     else:
         add_word_to_room(user_id, room_code, word)
-        bot.send_message(user_id, "Слово додано.")
+        bot.send_message(user_id, languages[LANGUAGE]['word_added'])
 
 
 def add_word_to_room(user_id, room_code, word):
@@ -237,7 +253,7 @@ def ask_to_start_game(user_id, room_code):
     start_game_button = types.KeyboardButton('/go')
     markup.add(start_game_button)
 
-    bot.send_message(user_id, "Натисніть /go, щоб розпочати гру.", reply_markup=markup)
+    bot.send_message(user_id, languages[LANGUAGE]['press_go_to_start_game'], reply_markup=markup)
 
 
 @bot.message_handler(commands=['go'])
@@ -263,27 +279,26 @@ def get_words(message):
                 clear_words_button = types.KeyboardButton('/clear_words')
                 markup.add(clear_words_button)
 
-                clear_words_message = (
-                    f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}\n\n"
-                    "Натисни /clear_words щоб очистити введені слова і зіграти знову або "
-                    "/delete_room щоб видалити кімнату і закінчити гру."
-                )
+                clear_words_message = languages[LANGUAGE]['clear_words_message_start'] + f" {room_code} " + \
+                                      languages[LANGUAGE]['clear_words_message_middle'] + words_message + \
+                                      languages[LANGUAGE]['clear_words_message_end']
 
                 bot.send_message(user_id, clear_words_message, reply_markup=markup)
             else:
-                bot.send_message(user_id, f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}")
+                bot.send_message(user_id,
+                                 languages[LANGUAGE]['clear_words_message_start'] + {room_code} + languages[LANGUAGE][
+                                     'clear_words_message_middle'] + {words_message})
 
             # Send words to all players
             for player in room_data['players']:
                 bot.send_message(player['user_id'],
                                  f"Слова в кімнаті {room_code} (випадковий порядок):\n{words_message}")
         else:
-            bot.send_message(user_id, "Кімнату не знайдено. Будь ласка, уточніть код в адміна.")
+            bot.send_message(user_id, languages[LANGUAGE]['not_in_a_room'])
     else:
-        bot.send_message(user_id, "Ви не в кімнаті. Будь ласка створіть чи зайдіть в кімнату.")
+        bot.send_message(user_id, languages[LANGUAGE]['not_in_a_room_admin'])
 
 
-# Function to get the latest room code associated with a user
 def get_user_room_code(user_id):
     user_rooms = [(room_code, room_data) for room_code, room_data in rooms.items() if
         user_id == room_data['admin']['user_id'] or any(
@@ -318,7 +333,7 @@ def clear_words(message):
                 json.dump(room_data, room_file, ensure_ascii=False)
 
             # Send a message to the admin
-            bot.send_message(user_id, "Слова видалено.")
+            bot.send_message(user_id, languages[LANGUAGE]['words_deleted'])
 
             # Trigger ask_a_word for admin
             ask_a_word(user_id, room_code, is_admin=True)
@@ -327,42 +342,22 @@ def clear_words(message):
             for player in room_data['players']:
                 ask_a_word(player['user_id'], room_code, is_admin=False)
         else:
-            bot.send_message(user_id, "Кімнату не знайдено. Будь ласка, уточніть код в адміна.")
+            bot.send_message(user_id, languages[LANGUAGE]['not_in_a_room'])
     else:
-        bot.send_message(user_id, "Ви не в кімнаті. Будь ласка створіть або зайдіть в кімнату.")
+        bot.send_message(user_id, languages[LANGUAGE]['not_in_a_room_admin'])
 
 
 @bot.message_handler(commands=['rules'])
 def rules(message):
     user_id = message.chat.id
-    rules_message = (
-        "Правила гри Імперія:\n"
-        "0. /start щоб розпочати.\n"
-        "1. Адмін створює кімнату та вказує кількість гравців.\n"
-        "2. Гравці долучаються до кімнати за допомогою Коду.\n"
-        "3. Адмін та гравці додають слова.\n"
-        "4. Після додавання усіх слів, адмін натискає /go, щоб всі побачили слова у випадковому порядку.\n"
-        "5. Гравці по черзі вгадують хто яке слово загадав. Треба назвати слово і ім'я\n"
-        "6. Той кого назвали повинен підтвердити чи спростувати гіпотезу\n"
-        "7. Не можна двічі опитувати того самого гравця\n"
-        "8. Якщо гравець A вгадав слово гравця B, то гравець "
-        "B приєднується в його імперію (вони разом повинні вгадати наступне слово)\n"
-        "9. Якщо інший гравець (С) вгадав слово гравця А, то обидва гравці А і В приєднуються в імперію гравця С\n"
-        "10. Мета гри залучити всіх гравців в одну імперію (вгадавши всі слова)\n"
-        "11. Після вгадування всіх слів, адмін натискає /clear_words, "
-        "щоб очистити слова в Кімнаті та зіграти знову. Або можна створити нову кімнату\n"
-    )
+    rules_message = languages[LANGUAGE]['rules']
     bot.send_message(user_id, rules_message)
 
 
 @bot.message_handler(commands=['contact_developer'])
 def contact_developer(message):
     user_id = message.chat.id
-    contact_message = (
-        "Ідеї, запитання, просто подякувати:\n"
-        "Електронна пошта: m.khranovskyi@gmail.com\n"
-        "Телеграм: @mik788"
-    )
+    contact_message = languages[LANGUAGE]['contact_developer']
     bot.send_message(user_id, contact_message)
 
 
@@ -375,17 +370,19 @@ def delete_room(message):
         room_filename = f'rooms/{room_code}.json'
         if os.path.exists(room_filename):
             os.remove(room_filename)  # Delete the room file
-            bot.send_message(user_id, f"Кімнату з кодом {room_code} було видалено.")
+            bot.send_message(user_id,
+                             languages[LANGUAGE]['room_deleted_start'] + f" {room_code} " + languages[LANGUAGE][
+                                 'room_deleted_end'])
+
         else:
-            bot.send_message(user_id, "Кімнату не знайдено.")
+            bot.send_message(user_id, languages[LANGUAGE]['room_is_not_found'])
     else:
-        bot.send_message(user_id, "Ви не в кімнаті. Будь ласка, створіть або зайдіть в кімнату.")
+        bot.send_message(user_id, languages[LANGUAGE]['no_room'])
 
     # Remove the keyboard markup after deleting the room
-    bot.send_message(user_id, "Видалено кімнату. Натисни /contact_developer для зв'язку з розробником."
-                              "\nАбо /start щоб розпочати гру знову.",
+    bot.send_message(user_id, languages[LANGUAGE]['final_message'],
                      reply_markup=types.ReplyKeyboardRemove())
 
 
 # Start the bot
-bot.infinity_polling(timeout=10, long_polling_timeout = 5)
+bot.infinity_polling(timeout=10, long_polling_timeout=5)
