@@ -55,6 +55,7 @@ def log_user_info(user_id, username, first_name, last_name):
 # For example, in your start function:
 @bot.message_handler(commands=['start'])
 def start(message):
+    log_user_activity('started_app', message.from_user)
     user_id = message.chat.id
     username = message.chat.username
     first_name = message.chat.first_name
@@ -115,8 +116,9 @@ def create_room(user_id, input_type=None, room_code=None, room_data=None, messag
 
         # Send a message to the admin indicating the room is created
         bot.send_message(user_id, language_strings['room_created'].format(room_code=room_code))
-
         # Introduce a delay of 3 seconds before calling ask_a_word for the admin
+
+        bot.send_chat_action(user_id, 'typing')
         time.sleep(3)
         # Call ask_a_word for the admin after the room is created
         ask_a_word(user_id, room_code, is_admin=True)
@@ -258,6 +260,7 @@ def ask_to_start_game(user_id, room_code):
 
 @bot.message_handler(commands=['go'])
 def get_words(message):
+    log_user_activity('pressed_go', message.from_user)
     user_id = message.chat.id
     room_code = get_user_room_code(user_id)
 
@@ -316,6 +319,7 @@ def get_user_room_code(user_id):
 
 @bot.message_handler(commands=['clear_words'])
 def clear_words(message):
+    log_user_activity('cleared_words', message.from_user)
     user_id = message.chat.id
     room_code = get_user_room_code(user_id)
 
@@ -349,6 +353,7 @@ def clear_words(message):
 
 @bot.message_handler(commands=['rules'])
 def rules(message):
+    log_user_activity('requested_rules', message.from_user)
     user_id = message.chat.id
     rules_message = languages[LANGUAGE]['rules']
     bot.send_message(user_id, rules_message)
@@ -356,6 +361,7 @@ def rules(message):
 
 @bot.message_handler(commands=['contact_developer'])
 def contact_developer(message):
+    log_user_activity('contacted_developer', message.from_user)
     user_id = message.chat.id
     contact_message = languages[LANGUAGE]['contact_developer']
     bot.send_message(user_id, contact_message)
@@ -363,6 +369,7 @@ def contact_developer(message):
 
 @bot.message_handler(commands=['delete_room'])
 def delete_room(message):
+    log_user_activity('deleted_room', message.from_user)
     user_id = message.chat.id
     room_code = get_user_room_code(user_id)
 
@@ -382,6 +389,20 @@ def delete_room(message):
     # Remove the keyboard markup after deleting the room
     bot.send_message(user_id, languages[LANGUAGE]['final_message'],
                      reply_markup=types.ReplyKeyboardRemove())
+
+
+def log_user_activity(action, user):
+    user_id = user.id
+    first_name = user.first_name
+    last_name = user.last_name if user.last_name else "Unknown"
+
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    log_entry = {'user_id': user_id, 'first_name': first_name, 'last_name': last_name, 'action': action,
+        'timestamp': timestamp}
+
+    with open('users_log.json', 'a') as log_file:
+        json.dump(log_entry, log_file)
+        log_file.write('\n')
 
 
 # Start the bot
