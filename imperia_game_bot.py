@@ -56,6 +56,7 @@ def log_user_info(user_id, username, first_name, last_name):
 @bot.message_handler(commands=['start'])
 def start(message):
     log_user_activity('started_app', message.from_user)
+    log_user_access(message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username)
     user_id = message.chat.id
     username = message.chat.username
     first_name = message.chat.first_name
@@ -391,6 +392,8 @@ def delete_room(message):
                      reply_markup=types.ReplyKeyboardRemove())
 
 
+
+#============= log user activity ==============
 def log_user_activity(action, user):
     user_id = user.id
     first_name = user.first_name
@@ -404,6 +407,19 @@ def log_user_activity(action, user):
         json.dump(log_entry, log_file)
         log_file.write('\n')
 
+
+# ===========user_access================
+def log_user_access(user_id, first_name, last_name, username):
+    print('called')
+    log_file = 'user_access.log'
+    access_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    with open(log_file, 'a') as f:
+        f.write(
+            f"Access Time: {access_time}, User ID: {user_id}, Name: {first_name} {last_name}, Username: {username}\n")
+
+
+# ===========Logging================
 
 # Start the bot
 bot.infinity_polling(timeout=10, long_polling_timeout=5)
